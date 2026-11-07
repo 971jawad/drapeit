@@ -17,7 +17,8 @@ export const Studio=forwardRef<StudioHandle,Props>(function Studio({garment,sett
     media.current=input;setSource(label);onSource(label);setLoading(true);onTracking({status:'loading',fps:0,confidence:0});
     let tracker;try{tracker=await getTracker();}catch{if(generation.current===token){setLoading(false);onError('Body tracking could not load. Check your connection, then restart the camera.');onTracking({status:'error',fps:0,confidence:0});}return;}
     if(generation.current!==token)return;setLoading(false);
-    let detectionTime=0,lastReport=0,count=0,lastVideoTime=-1,photoDone=false,lastTimestamp=0;
+    let detectionTime=0,lastReport=performance.now(),count=0,lastVideoTime=-1,photoDone=false,lastTimestamp=0;
+    const captured=document.createElement('canvas');
     const loop=(now:number)=>{
       if(generation.current!==token||!canvas.current)return;
       const w=input instanceof HTMLVideoElement?input.videoWidth:input.naturalWidth,h=input instanceof HTMLVideoElement?input.videoHeight:input.naturalHeight;
@@ -26,17 +27,21 @@ export const Studio=forwardRef<StudioHandle,Props>(function Studio({garment,sett
       const changed=input instanceof HTMLVideoElement?input.currentTime!==lastVideoTime:!photoDone;
       if(changed&&now-detectionTime>=50){
         try {
+          // Capture once: inference, compositing and limb occlusion must use
+          // the same pixels, even if inference takes longer than a video frame.
+          captured.width=out.width;captured.height=out.height;captured.getContext('2d')!.drawImage(input,0,0,captured.width,captured.height);
           const ts=Math.max(performance.now(),lastTimestamp+1);lastTimestamp=ts;
-          const result=tracker.detectForVideo(input,ts);const next=result.landmarks[0] as Point[]|undefined;
-          if(next&&poseConfidence(next)>.35){pose.current=smoothPose(pose.current,next,now-detectionTime);lastSeen.current=now;}else pose.current=null;
+          const result=tracker.detectForVideo(captured,ts);const next=result.landmarks[0] as Point[]|undefined;
+          const face=next?Math.max(...[0,1,4].map(i=>next[i].visibility??0)):0;
+          if(next&&poseConfidence(next)>.5&&face>.55){pose.current=smoothPose(pose.current,next,now-detectionTime);lastSeen.current=now;}else pose.current=null;
           result.close();photoDone=true;if(input instanceof HTMLVideoElement)lastVideoTime=input.currentTime;count++;
         }catch(e){cancelAnimationFrame(frame.current);latest.current.onError('Tracking stopped. Please restart your camera or choose another photo.');latest.current.onTracking({status:'error',fps:0,confidence:0,message:String(e)});return;}
         detectionTime=now;
       }
       if(input instanceof HTMLVideoElement&&now-lastSeen.current>450)pose.current=null;
       const ctx=out.getContext('2d')!;ctx.clearRect(0,0,out.width,out.height);ctx.save();
-      if(latest.current.settings.mirror&&label==='Camera'){ctx.translate(out.width,0);ctx.scale(-1,1);}ctx.drawImage(input,0,0,out.width,out.height);
-      if(pose.current&&tex.current&&!latest.current.compare)renderGarment(ctx,tex.current,pose.current,latest.current.settings,latest.current.garment.category,input,out.width,out.height);ctx.restore();
+      if(latest.current.settings.mirror&&label==='Camera'){ctx.translate(out.width,0);ctx.scale(-1,1);}if(captured.width&&captured.height)ctx.drawImage(captured,0,0,out.width,out.height);
+      if(pose.current&&tex.current&&!latest.current.compare)renderGarment(ctx,tex.current,pose.current,latest.current.settings,latest.current.garment.category,captured,out.width,out.height);ctx.restore();
       if(now-lastReport>500){latest.current.onTracking({status:pose.current?'tracking':'searching',fps:input instanceof HTMLImageElement?0:Math.round(count*1000/(now-lastReport)),confidence:pose.current?poseConfidence(pose.current):0});count=0;lastReport=now;out.dataset.pose=pose.current?'detected':'missing';out.dataset.source=label;}
       frame.current=requestAnimationFrame(loop);
     };frame.current=requestAnimationFrame(loop);

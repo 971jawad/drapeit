@@ -6,7 +6,10 @@ function triangle(ctx:CanvasRenderingContext2D,image:CanvasImageSource,s:XY[],d:
   const det=a[0]*(b[1]-c[1])+b[0]*(c[1]-a[1])+c[0]*(a[1]-b[1]);if(Math.abs(det)<.001)return;
   const coeff=(v:number[])=>[(v[0]*(b[1]-c[1])+v[1]*(c[1]-a[1])+v[2]*(a[1]-b[1]))/det,(v[0]*(c[0]-b[0])+v[1]*(a[0]-c[0])+v[2]*(b[0]-a[0]))/det,(v[0]*(b[0]*c[1]-c[0]*b[1])+v[1]*(c[0]*a[1]-a[0]*c[1])+v[2]*(a[0]*b[1]-b[0]*a[1]))/det];
   const x=coeff([A[0],B[0],C[0]]), y=coeff([A[1],B[1],C[1]]);
-  ctx.save();ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.lineTo(...C);ctx.closePath();ctx.clip();ctx.transform(x[0],y[0],x[1],y[1],x[2],y[2]);ctx.drawImage(image,0,0);ctx.restore();
+  // Subpixel overlap prevents antialiasing cracks between adjacent triangles.
+  const center=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];
+  const expanded=d.map(p=>{const dx=p[0]-center[0],dy=p[1]-center[1],length=Math.hypot(dx,dy)||1;return[p[0]+dx/length*.7,p[1]+dy/length*.7] as XY;});
+  ctx.save();ctx.beginPath();ctx.moveTo(...expanded[0]);ctx.lineTo(...expanded[1]);ctx.lineTo(...expanded[2]);ctx.closePath();ctx.clip();ctx.transform(x[0],y[0],x[1],y[1],x[2],y[2]);ctx.drawImage(image,0,0);ctx.restore();
 }
 export function texture(image:HTMLImageElement,settings:FitSettings) {
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=Math.round(512*image.height/image.width);const ctx=canvas.getContext('2d')!;ctx.drawImage(image,0,0,canvas.width,canvas.height);
