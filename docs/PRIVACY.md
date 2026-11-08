@@ -9,3 +9,5 @@
 - Camera access starts only after a user action. Stop preview and closing the app release camera tracks. No audio is requested.
 - The optional AI still-image feature sends person/garment images to the configured backend and AI provider only when **Send photos & render** is selected. Review that provider's retention policy before using it. Backend access tokens are kept in page memory, not localStorage.
 - Reference videos and the original project PDF are not included in the public repository or deployment. Human-footage verification artifacts remain outside the repository.
+
+- **AI live try-on** streams camera video and the selected garment image to Decart after an explicit consent checkbox and Start action. Audio is disabled. This mode is not on-device processing. The session stops on Stop, close, tab leave, or a two-minute limit. Permanent provider keys remain server-side; short-lived tokens stay in memory. Review Decart’s privacy and retention terms before using it.

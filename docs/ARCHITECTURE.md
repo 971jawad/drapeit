@@ -38,3 +38,7 @@ For high-end production, move inference to a dedicated worker (with device compa
 Static delivery and local inference avoid a centralized per-frame server bottleneck. That does not establish billion-user readiness. Before commercial rollout, perform device/browser coverage, WCAG and security audits, extension-store review, automated production smoke checks, error monitoring with explicit privacy rules, abuse protection, and load/billing tests for the optional backend. See `server/README.md` for multi-user service requirements.
 
 Physical sizing needs reliable body measurements, garment measurement charts, fabric properties and a validated fit model. Photorealistic generated live video needs a GPU inference architecture, latency/temporal-consistency evaluation, provider or model licensing, and substantial additional validation.
+
+## Live AI video path
+
+`RealtimeTryOn.tsx` lazy-loads the official Decart SDK, requests a token from `/realtime-token`, sends the camera and garment reference over WebRTC, and displays only the provider’s returned stream. The Worker mints model-scoped short-lived credentials; the permanent API key never reaches the browser. The local pose engine is stopped before opening AI mode. Source control contains no provider account or credits. Live service setup and validation requirements are in `server/REALTIME.md`.

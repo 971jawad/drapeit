@@ -1,3 +1,27 @@
-const showError=message=>document.getElementById('error').textContent=message;
-document.getElementById('open').addEventListener('click',async()=>{await chrome.runtime.sendMessage({type:'OPEN_STUDIO'});window.close();});
-document.getElementById('pick').addEventListener('click',async()=>{try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!/^https?:\/\//.test(tab?.url||''))throw new Error('Open a clothing store page first. Browser-internal pages cannot be selected.');await chrome.scripting.executeScript({target:{tabId:tab.id},files:['picker.js']});window.close();}catch(e){showError(e.message||'This page cannot be accessed. Try a normal product page.');}});
+const showError = (message) =>
+  (document.getElementById("error").textContent = message);
+document.getElementById("open").addEventListener("click", async () => {
+  await chrome.runtime.sendMessage({ type: "OPEN_STUDIO" });
+  window.close();
+});
+document.getElementById("pick").addEventListener("click", async () => {
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (!/^https?:\/\//.test(tab?.url || ""))
+      throw new Error(
+        "Open a clothing store page first. Browser-internal pages cannot be selected.",
+      );
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["picker.js"],
+    });
+    window.close();
+  } catch (e) {
+    showError(
+      e.message || "This page cannot be accessed. Try a normal product page.",
+    );
+  }
+});

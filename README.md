@@ -4,7 +4,7 @@ A browser-based virtual fitting studio inspired by Jawad Ahmed Khan's DrapeIt pr
 
 **Live app:** https://971jawad.github.io/drapeit/
 
-DrapeIt offers real on-device pose tracking and a deformable 2D garment preview. It is **not photorealistic live clothing replacement**, physical cloth simulation, or a guarantee of garment fit. No paid inference provider is configured. An optional secure adapter for AI-generated still images is included separately.
+DrapeIt offers real on-device pose tracking and a deformable 2D garment preview. It is **not photorealistic live clothing replacement**, physical cloth simulation, or a guarantee of garment fit. No paid inference provider is configured. A dedicated [Decart Lucy VTON live-video integration](server/REALTIME.md) is implemented with a secure token broker, but a real provider session and its visual quality remain unverified until credentials are configured. An optional FASHN still-image adapter is also included.
 
 ## Three ways to bring a garment
 
@@ -38,6 +38,10 @@ npm run build
 
 The build produces `dist/` and `dist/drapeit-extension.zip`. Open the app through localhost or HTTPS; browser cameras do not work on arbitrary insecure HTTP origins. Model assets are loaded lazily on first use.
 
+## AI live clothing replacement
+
+Open **AI live try-on** in the mirror toolbar. This uses a separate real-time WebRTC provider, not the local overlay. Follow [the complete live backend setup](server/REALTIME.md) to deploy the token service and add a Decart key as a server secret. The browser receives only short-lived session tokens. Camera streaming and provider costs require explicit consent. No paid session was run during implementation.
+
 ## Install the extension
 
 Download the ZIP from the app's **Get the extension** dialog, unzip it, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the extracted folder containing `manifest.json`.
@@ -50,7 +54,7 @@ This is an unpacked desktop extension, not a Chrome Web Store release. Mobile Ch
 
 The visual engine follows one person facing the camera. Shoulders and hips must be visible; dresses and bottoms also need lower-body visibility. Camera perspective, model confidence, existing clothing, garment cutouts, side views and rapid motion affect quality. It cannot remove the user's original outfit or invent realistic hidden fabric surfaces. The original clothing may remain visible outside the overlay. Hand occlusion is a geometric approximation.
 
-Illustrated catalogue garments are original sample assets, not representations of commercial products. For a real garment, import its product photo. Interactive segmentation separates an object from its background; it cannot reliably distinguish clothing from a person wearing it. Use the manual outline to exclude the head, body, and surrounding content.
+The catalogue uses actual garment photographs, with source attribution in `public/garments/SOURCES.md`. Retailers are not affiliated with this project. You can also import a product photo from your preferred store. Interactive segmentation separates an object from its background; it cannot reliably distinguish clothing from a person wearing it. Use the manual outline to exclude the head, body, and surrounding content.
 
 The optional [rendering service](server/README.md) is separate from live tracking. Real provider integration remains unverified until the owner configures credentials and performs a paid render.
 
