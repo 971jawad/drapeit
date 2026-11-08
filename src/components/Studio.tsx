@@ -165,6 +165,8 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
         try {
           // Capture once: inference, compositing and limb occlusion must use
           // the same pixels, even if inference takes longer than a video frame.
+          const capturedVideoTime =
+            input instanceof HTMLVideoElement ? input.currentTime : -1;
           captured.width = out.width;
           captured.height = out.height;
           captured
@@ -182,12 +184,16 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
             : 0;
           if (next && poseConfidence(next) > 0.5 && face > 0.55) {
             pose.current = smoothPose(pose.current, next, now - detectionTime);
-            lastSeen.current = now;
+            // Inference can exceed a frame interval on CPU. The rendered
+            // image and pose still match; start loss expiry when it completes.
+            lastSeen.current = performance.now();
           } else pose.current = null;
           result.close();
           photoDone = true;
           if (input instanceof HTMLVideoElement)
-            lastVideoTime = input.currentTime;
+            // Record the frame we actually inferred, not a newer video frame
+            // that arrived while synchronous inference blocked the main thread.
+            lastVideoTime = capturedVideoTime;
           count++;
         } catch (e) {
           cancelAnimationFrame(frame.current);

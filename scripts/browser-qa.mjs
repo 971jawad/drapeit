@@ -4,11 +4,11 @@ import path from "node:path";
 const root = path.resolve("dist"),
   origin = "https://drapeit.test",
   base = process.env.QA_BASE_URL || `${origin}/drapeit/`;
-const output = "/workspace/drapeit-qa";
+const output = path.resolve(process.env.QA_OUTPUT || "test-results");
 await fs.mkdir(output, { recursive: true });
 const camera = process.env.QA_CAMERA || `${output}/human-a.y4m`;
 const browser = await chromium.launch({
-  executablePath: "/usr/bin/chromium",
+  executablePath: process.env.QA_CHROMIUM || undefined,
   headless: true,
   args: [
     "--no-sandbox",
@@ -23,6 +23,7 @@ const context = await browser.newContext({
   viewport: { width: 1440, height: 1100 },
   permissions: ["camera"],
 });
+context.setDefaultTimeout(30000);
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));

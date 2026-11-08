@@ -1,12 +1,12 @@
 import { chromium } from "@playwright/test";
 import fs from "node:fs/promises";
 import path from "node:path";
-const output = "/workspace/drapeit-qa";
+const output = path.resolve(process.env.QA_OUTPUT || "test-results");
 const extension = path.resolve("extension-build");
 const context = await chromium.launchPersistentContext(
   `${output}/extension-profile`,
   {
-    executablePath: "/usr/bin/chromium",
+    executablePath: process.env.QA_CHROMIUM || undefined,
     headless: true,
     ignoreDefaultArgs: ["--disable-extensions"],
     args: [

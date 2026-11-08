@@ -31,6 +31,7 @@ import {
   Trash2,
   Upload,
   Video,
+  PanelsTopLeft,
   X,
 } from "lucide-react";
 import { catalogue, defaultSettings } from "./data";
@@ -49,6 +50,8 @@ import { importImageUrl, readFile, safeRemoteUrl } from "./engine/images";
 import { recommendedSize } from "./engine/geometry";
 import { requestRender } from "./engine/render-client";
 const isExtension = typeof chrome !== "undefined" && !!chrome.runtime?.id;
+const isShoppingWindow =
+  new URLSearchParams(location.search).get("window") === "1";
 const sizes: Size[] = ["XS", "S", "M", "L", "XL", "XXL"];
 const swatches = [
   "",
@@ -348,6 +351,25 @@ export default function App() {
       return;
     }
     download(image, `drapeit-${garment.id}-${settings.size}.jpg`);
+  }
+  function openShoppingWindow() {
+    const url = new URL(location.href);
+    url.search = "?window=1";
+    url.hash = "";
+    const fittingWindow = window.open(
+      url.href,
+      "drapeit-shopping",
+      "popup,width=560,height=850,resizable=yes,scrollbars=yes",
+    );
+    if (!fittingWindow) {
+      notify(
+        "Allow pop-ups for DrapeIt to open the shopping window, or open this site in a separate browser window.",
+      );
+      return;
+    }
+    studio.current?.stop();
+    setModal(null);
+    fittingWindow.focus();
   }
   async function fullscreen() {
     try {
@@ -695,6 +717,16 @@ export default function App() {
                 <span className="beta-tag">LIVE PREVIEW</span>
               </div>
               <div className="toolbar-actions">
+                {!isExtension && !isShoppingWindow && (
+                  <button
+                    className="icon-button"
+                    aria-label="Open shopping window"
+                    title="Open a fitting window beside your store — no install"
+                    onClick={openShoppingWindow}
+                  >
+                    <PanelsTopLeft size={17} />
+                  </button>
+                )}
                 <button
                   className="ai-launch"
                   onClick={() => {
@@ -1292,8 +1324,24 @@ export default function App() {
                 <p>
                   Built for desktop Chrome and Edge. Select a product photo on a
                   store page and open a compact live fitting window alongside
-                  it, inspired by your WhatsApp reference.
+                  it.
                 </p>
+                {!isExtension && (
+                  <div className="info-box">
+                    <h3>Shop with a window. No install needed.</h3>
+                    <p>
+                      Open a compact fitting room and keep it beside your store.
+                      Save the product image and upload it, or paste its direct
+                      image link when the store allows imports. Start your
+                      camera and switch garments as you browse. The window
+                      cannot read the store page or select its images
+                      automatically.
+                    </p>
+                    <button className="button" onClick={openShoppingWindow}>
+                      <PanelsTopLeft size={16} /> Open shopping window
+                    </button>
+                  </div>
+                )}
                 <ol className="install-steps">
                   <li>Download and unzip the extension package.</li>
                   <li>

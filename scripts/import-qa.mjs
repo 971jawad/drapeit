@@ -1,12 +1,13 @@
 import { chromium } from "@playwright/test";
 import fs from "node:fs/promises";
 import path from "node:path";
-const output = "/workspace/drapeit-qa",
+const output = path.resolve(process.env.QA_OUTPUT || "test-results"),
   root = path.resolve("dist"),
   origin = "https://drapeit.test";
+await fs.mkdir(output, { recursive: true });
 const report = { checks: [], errors: [] };
 const browser = await chromium.launch({
-  executablePath: "/usr/bin/chromium",
+  executablePath: process.env.QA_CHROMIUM || undefined,
   headless: true,
   args: [
     "--no-sandbox",
@@ -17,6 +18,7 @@ const browser = await chromium.launch({
 const context = await browser.newContext({
   viewport: { width: 1440, height: 1000 },
 });
+context.setDefaultTimeout(30000);
 const page = await context.newPage();
 page.on("pageerror", (e) => report.errors.push(e.message));
 await page.route(`${origin}/**`, async (route) => {
@@ -53,9 +55,7 @@ try {
     .screenshot({ path: `${output}/garment-fixture.png` });
   await page
     .getByTestId("person-file")
-    .setInputFiles(
-      process.env.QA_PERSON_PHOTO || "/workspace/reference-review/person-3.png",
-    );
+    .setInputFiles(process.env.QA_PERSON_PHOTO || `${output}/person.png`);
   await page
     .locator('canvas[data-pose="detected"]')
     .waitFor({ timeout: 60000 });
@@ -166,10 +166,7 @@ try {
   );
   await page
     .getByTestId("video-file")
-    .setInputFiles(
-      process.env.QA_PERSON_VIDEO ||
-        "/workspace/attachments/e7dcd124-f5f4-4600-97ce-74068df01ff4/snapgram.io_p1nudupbuanr.mp4",
-    );
+    .setInputFiles(process.env.QA_PERSON_VIDEO || `${output}/person.mp4`);
   await page
     .locator('canvas[data-pose="detected"][data-source="Video"]')
     .waitFor({ timeout: 60000 });

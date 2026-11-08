@@ -44,11 +44,15 @@ Open **AI live try-on** in the mirror toolbar. This uses a separate real-time We
 
 ## Install the extension
 
+**No-install alternative:** choose the **Open shopping window** icon beside the mirror (or open it from **Get the extension**). A compact browser window runs the same live camera engine beside your store. Upload a saved garment image or import a direct image link from a host that permits it. This works without extension installation; it cannot automatically inspect another store tab. You can also open [the compact fitting room](https://971jawad.github.io/drapeit/?window=1) directly and place it beside your store.
+
 Download the ZIP from the app's **Get the extension** dialog, unzip it, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the extracted folder containing `manifest.json`.
 
 Visit a normal HTTPS product page, click DrapeIt → **Pick a garment from this page**, and click the product image. In the fitting window, select **Import garment**, approve access to the chosen image host, isolate the garment, and start the camera. You can also right-click a product image → **Try this garment with DrapeIt**.
 
 This is an unpacked desktop extension, not a Chrome Web Store release. Mobile Chrome does not support it. Do not install from an untrusted ZIP.
+
+Managed browsers may prohibit extension installation. Use the no-install shopping window there, or install the extension in your own Chrome/Edge profile where allowed. The cloud browser's management policy was not changed; native extension execution could not be validated in that environment.
 
 ## Quality and practical limits
 

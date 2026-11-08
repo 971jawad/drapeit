@@ -25,7 +25,10 @@ class ErrorBoundary extends React.Component<
     );
   }
 }
-if (typeof chrome !== "undefined" && chrome.runtime?.id)
+if (
+  (typeof chrome !== "undefined" && chrome.runtime?.id) ||
+  new URLSearchParams(location.search).get("window") === "1"
+)
   document.documentElement.classList.add("extension-window");
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
