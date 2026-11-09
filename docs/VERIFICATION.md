@@ -8,7 +8,7 @@
 
 ## Observed results
 
-- 22 unit checks passed: geometry (8), extension import boundaries (5), backend/provider token boundaries (9).
+- 31 unit checks passed: geometry (8), extension import boundaries (5), test broker/provider boundaries (9), persistent hosted authentication/proxy boundaries (9).
 - TypeScript, production build, and self-contained extension ZIP packaging passed. GitHub Actions deployed successfully and the public HTTPS page returned 200.
 - On the deployed site, the first human camera fixture passed detection, size/tint/pattern controls, wardrobe save, JPEG download, camera shutdown, measurement guidance, failed-import feedback and mobile layout/controls. One standalone cloud run reported 14 fps; this is a measurement of that fixture/environment, not a performance guarantee.
 - Upload tests passed: human photo detection, actual model-driven garment cutout (transparent background and opaque garment centre), manual outline, direct CORS image link, no-person rejection, and uploaded human video with a distinct Video label.
@@ -46,5 +46,7 @@ A replayed human video is useful for repeatable tracking verification; it is not
 6. Check mobile portrait/landscape, Safari behavior, low-light and low-end-device performance. These cannot be inferred from a desktop Chromium test.
 
 ## Optional provider
+
+The persistent service also passed browser tests using its actual Worker handler: login issued a protected cookie, reload retained authentication, no provider/access key appeared in localStorage, the SDK requested a token through server authentication, and a mocked provider refusal released all camera tracks. Wrangler validated the deployable Worker in dry-run mode. The Windows helper passed PowerShell 7 parsing, CLI output-capture and secret-redaction checks. Windows installation, Cloudflare authorization, account deployment and successful generated video remain owner-side checks; no private provider credential was supplied to this execution environment.
 
 No paid AI provider was supplied. The worker is mock-tested; a real provider render, provider latency, visual fidelity, billing and retention behavior remain unverified. The browser session test exercises the real SDK's token request against a mocked unavailable broker and checks consent, no fake output, and camera cleanup; it does not connect to Decart or prove generated-video quality. See [live provider setup](../server/REALTIME.md).

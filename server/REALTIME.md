@@ -1,5 +1,7 @@
 # Real-time AI virtual try-on (Decart Lucy VTON)
 
+For a persistent owner service that remembers browser sign-in and automatically supplies tokens, use [Connect once: hosted live AI](PERSISTENT-LIVE.md). The two-minute broker below remains available for bounded integration tests.
+
 This is the integration intended for the WhatsApp-style live clothing-replacement goal. It streams the user's actual camera and garment photo to `lucy-vton-3.6` and displays the returned generated video. It is distinct from the browser's local 2D overlay and from the FASHN still-image adapter.
 
 **Status: implemented against the official SDK and documentation; token broker mock-tested; no funded Decart account was provided, so real paid-session connection, latency and visual quality are not yet verified.** Do not describe it as a tested match to the reference video. The public website's on-device engine works without a provider; AI live mode requires the setup below.

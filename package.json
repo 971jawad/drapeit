@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build && node scripts/package-extension.mjs",
     "test": "vitest run",
-    "test:e2e": "node scripts/browser-qa.mjs && node scripts/import-qa.mjs && node scripts/session-qa.mjs",
+    "test:e2e": "node scripts/browser-qa.mjs && node scripts/import-qa.mjs && node scripts/session-qa.mjs && node scripts/hosted-qa.mjs",
     "format": "prettier --write src tests scripts extension server"
   },
   "dependencies": {

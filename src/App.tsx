@@ -110,7 +110,11 @@ export default function App() {
       | "render"
       | "realtime"
       | null
-    >(null),
+    >(
+      new URLSearchParams(location.search).get("live") === "1"
+        ? "realtime"
+        : null,
+    ),
     [looks, setLooks] = useState<SavedLook[]>(readLooks),
     [selectedLooks, setSelectedLooks] = useState<string[]>([]),
     [compare, setCompare] = useState(false),
@@ -157,6 +161,22 @@ export default function App() {
     },
     [],
   );
+  useEffect(() => {
+    if (isExtension || location.hostname.endsWith("github.io")) return;
+    const abort = new AbortController();
+    fetch("./api/hosted-status", {
+      credentials: "same-origin",
+      signal: abort.signal,
+    })
+      .then(async (r) => {
+        if (r.ok && (await r.json()).hosted) {
+          studio.current?.stop();
+          setModal("realtime");
+        }
+      })
+      .catch(() => {});
+    return () => abort.abort();
+  }, []);
   useEffect(() => {
     if (!isExtension) return;
     chrome.storage.session

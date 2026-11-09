@@ -40,6 +40,8 @@ The build produces `dist/` and `dist/drapeit-extension.zip`. Open the app throug
 
 ## AI live clothing replacement
 
+For one-time account setup with automatic credentials and no repeated token copying, use the [persistent live service setup](server/PERSISTENT-LIVE.md). Its hosted URL remembers your browser sign-in and runs the AI studio directly; the permanent Decart key stays in Cloudflare secrets. Actual generated-video quality still requires a real provider session.
+
 Open **AI live try-on** in the mirror toolbar. This uses a separate real-time WebRTC provider, not the local overlay. Follow [the complete live backend setup](server/REALTIME.md) to deploy the token service and add a Decart key as a server secret. The browser receives only short-lived session tokens. Camera streaming and provider costs require explicit consent. No paid session was run during implementation.
 
 ## Install the extension

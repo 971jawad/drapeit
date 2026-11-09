@@ -24,6 +24,50 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
     [error, setError] = useState(""),
     [seconds, setSeconds] = useState(0),
     [hasOutput, setHasOutput] = useState(false);
+  const [hosted, setHosted] = useState<{
+      configured: boolean;
+      authenticated: boolean;
+    } | null>(null),
+    [checkingHost, setCheckingHost] = useState(true),
+    [loginCode, setLoginCode] = useState(""),
+    [loginBusy, setLoginBusy] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("./api/hosted-status", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          const data = await r.json();
+          if (data.hosted) setHosted(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCheckingHost(false));
+    return () => controller.abort();
+  }, []);
+  async function login() {
+    setLoginBusy(true);
+    setError("");
+    try {
+      const response = await fetch("./api/login", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: loginCode }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not sign in.");
+      setHosted({ configured: true, authenticated: true });
+      setLoginCode("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoginBusy(false);
+    }
+  }
   const output = useRef<HTMLVideoElement>(null),
     camera = useRef<MediaStream | null>(null),
     session = useRef<RealTimeClient | null>(null),
@@ -102,7 +146,7 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
     if (!consent) return;
     let base: URL;
     try {
-      base = new URL(endpoint);
+      base = new URL(hosted ? location.origin : endpoint);
       if (base.protocol !== "https:" || base.username || base.password)
         throw new Error();
     } catch {
@@ -136,12 +180,15 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
       const client = createDecartClient({
         telemetry: false,
         apiKeyProvider: async () => {
-          const response = await fetch(new URL("/realtime-token", base), {
-            method: "POST",
-            headers: { Authorization: `Bearer ${access}` },
-            signal,
-            credentials: "omit",
-          });
+          const response = await fetch(
+            new URL(hosted ? "/api/realtime-token" : "/realtime-token", base),
+            {
+              method: "POST",
+              headers: hosted ? {} : { Authorization: `Bearer ${access}` },
+              signal,
+              credentials: hosted ? "same-origin" : "omit",
+            },
+          );
           const data = await response.json();
           if (!response.ok)
             throw new Error(data.error || "Unable to start a live session");
@@ -156,7 +203,7 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
       if (token !== generation.current) return;
       const connected = await client.realtime.connect(stream, {
         model,
-        retries: 0,
+        retries: hosted ? 2 : 0,
         mirror: "auto",
         initialState: { prompt: { text: prompt(), enhance: false }, image },
         onConnectionChange: (s) => {
@@ -201,7 +248,7 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
       clock.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - began) / 1000);
         setSeconds(elapsed);
-        if (elapsed >= 120) {
+        if (!hosted && elapsed >= 120) {
           stop();
           setError(
             "The two-minute session limit was reached. Start a new session only when ready.",
@@ -254,18 +301,24 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
             <h3>
               {active
                 ? "Connecting your live fitting session…"
-                : "Connect a live rendering service"}
+                : hosted?.authenticated
+                  ? "Ready for your live camera"
+                  : "Connect a live rendering service"}
             </h3>
             <p>
               {active
                 ? "Your generated video will appear here when the provider returns it."
-                : "No provider is connected by default. A live paid session has not been verified for this project yet."}
+                : hosted?.authenticated
+                  ? "Choose a garment and start. Your generated fitting video will appear here."
+                  : "Connect your service before starting a generated video session."}
             </p>
           </div>
         )}
         {hasOutput && (
           <span className="ai-live-badge">
-            <span className="status-dot live" /> AI LIVE · {seconds}s / 120s
+            <span className="status-dot live" /> AI LIVE ·{" "}
+            {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+            {!hosted && " / 2:00"}
           </span>
         )}
       </div>
@@ -282,27 +335,67 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
           </button>
         ))}
       </div>
+      {hosted && (
+        <div className="info-box">
+          <h3>
+            {hosted.authenticated
+              ? "Your service is connected"
+              : "Connect this browser once"}
+          </h3>
+          <p>
+            {hosted.authenticated
+              ? "Session tokens renew automatically. Your provider key stays in the hosted service. Start when ready; streaming continues until you stop or leave this tab."
+              : hosted.configured
+                ? "Paste the service access code copied by the setup command. This browser will remember your sign-in; you do not need to paste video-session tokens."
+                : "Complete the one-time hosting setup before starting."}
+          </p>
+          {!hosted.authenticated && hosted.configured && (
+            <div className="ai-form">
+              <label>
+                Service access code
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginCode}
+                  onChange={(e) => setLoginCode(e.target.value)}
+                />
+              </label>
+              <button
+                className="button primary"
+                disabled={loginBusy || !loginCode}
+                onClick={login}
+              >
+                {loginBusy ? "Connecting…" : "Remember this browser"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       <div className="ai-form">
-        <label>
-          Token service URL
-          <input
-            type="url"
-            placeholder="https://your-worker.workers.dev"
-            value={endpoint}
-            onChange={(e) => setEndpoint(e.target.value)}
-            disabled={active}
-          />
-        </label>
-        <label>
-          Service access token
-          <input
-            type="password"
-            autoComplete="off"
-            value={access}
-            onChange={(e) => setAccess(e.target.value)}
-            disabled={active}
-          />
-        </label>
+        {!hosted && (
+          <>
+            <label>
+              Token service URL
+              <input
+                type="url"
+                placeholder="https://your-worker.workers.dev"
+                value={endpoint}
+                onChange={(e) => setEndpoint(e.target.value)}
+                disabled={active}
+              />
+            </label>
+            <label>
+              Service access token
+              <input
+                type="password"
+                autoComplete="off"
+                value={access}
+                onChange={(e) => setAccess(e.target.value)}
+                disabled={active}
+              />
+            </label>
+          </>
+        )}
         <label>
           Visual fit preference
           <select value={fit} onChange={(e) => setFit(e.target.value)}>
@@ -343,7 +436,13 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
           <button
             className="button primary"
             onClick={start}
-            disabled={!consent || !endpoint || !access}
+            disabled={
+              checkingHost ||
+              !consent ||
+              (hosted
+                ? !hosted.authenticated || !hosted.configured
+                : !endpoint || !access)
+            }
           >
             <Camera size={16} /> Start live AI try-on
           </button>
@@ -361,8 +460,10 @@ export function RealtimeTryOn({ garment, garments, onChoose }: Props) {
         </a>
       </div>
       <span className="ai-session-note">
-        <ShieldCheck size={13} /> Provider key stays on the server. Sessions
-        stop after two minutes or when you leave this tab.
+        <ShieldCheck size={13} /> Provider key stays on the server.{" "}
+        {hosted
+          ? "Automatic reconnects use fresh tokens. Streaming stops when you stop or leave this tab. Provider availability and credits still apply."
+          : "Sessions stop after two minutes or when you leave this tab."}
       </span>
     </div>
   );
