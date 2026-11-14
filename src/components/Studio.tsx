@@ -56,7 +56,7 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
   latest.current = { settings, garment, layers, compare, onTracking, onError };
   useEffect(() => {
     let alive = true;
-    const pieces = layers?.length ? layers : [{ garment, color: settings.color }];
+    const pieces = layers ?? [{ garment, color: settings.color }];
     const cache = new Map<string, HTMLCanvasElement>();
     Promise.all(pieces.map(async (piece) => {
       try {
@@ -229,9 +229,7 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
       if (captured.width && captured.height)
         ctx.drawImage(captured, 0, 0, out.width, out.height);
       if (pose.current && !latest.current.compare) {
-        const chosen = latest.current.layers?.length
-          ? latest.current.layers
-          : [{ garment: latest.current.garment, color: latest.current.settings.color }];
+        const chosen = latest.current.layers ?? [{ garment: latest.current.garment, color: latest.current.settings.color }];
         // Bottoms -> main layers -> outer layers -> accessories.
         const priority: Record<string, number> = {
           bottom: 0, dress: 1, top: 2, outer: 3,
