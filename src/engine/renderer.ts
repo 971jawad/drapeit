@@ -234,7 +234,7 @@ export function renderAccessory(
   image: HTMLCanvasElement,
   pose: Point[],
   settings: FitSettings,
-  slot: "scarf" | "mask" | "wrist" | "neck" | "nose",
+  slot: "scarf" | "mask" | "wrist" | "wrist-right" | "neck" | "nose",
   w: number,
   h: number,
 ) {
@@ -248,9 +248,10 @@ export function renderAccessory(
   const torso = distance(mid(11, 12), mid(23, 24));
   const sizeScale = settings.width / 100;
   let center: {x:number;y:number}, displayWidth: number, displayHeight: number;
-  if (slot === "wrist") {
-    if ((p[15].visibility ?? 0) < 0.4) return;
-    center = {x:p[15].x, y:p[15].y};
+  if (slot === "wrist" || slot === "wrist-right") {
+    const index = slot === "wrist-right" ? 16 : 15;
+    if ((p[index].visibility ?? 0) < 0.4) return;
+    center = {x:p[index].x, y:p[index].y};
     displayWidth = shoulder * 0.27 * sizeScale;
     displayHeight = displayWidth;
   } else if (slot === "mask") {
