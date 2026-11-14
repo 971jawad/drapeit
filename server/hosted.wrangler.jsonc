@@ -2,6 +2,21 @@
   "name": "drapeit-live",
   "main": "hosted-worker.js",
   "compatibility_date": "2026-01-01",
-  "workers_dev": true,
-  "ratelimits": [{ "name": "RATE_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } }]
+  "workers_dev": false,
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "iamjawad.dpdns.org",
+      "custom_domain": true
+    }
+  ]
 }
