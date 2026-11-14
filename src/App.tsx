@@ -44,7 +44,7 @@ import type {
   TrackingState,
 } from "./types";
 import { Studio, type StudioHandle } from "./components/Studio";
-import { RealtimeTryOn } from "./components/RealtimeTryOn";
+import { FashnTryOn } from "./components/FashnTryOn";
 import { GarmentEditor } from "./components/GarmentEditor";
 import { importImageUrl, readFile, safeRemoteUrl } from "./engine/images";
 import { recommendedSize } from "./engine/geometry";
@@ -161,22 +161,6 @@ export default function App() {
     },
     [],
   );
-  useEffect(() => {
-    if (isExtension || location.hostname.endsWith("github.io")) return;
-    const abort = new AbortController();
-    fetch("./api/hosted-status", {
-      credentials: "same-origin",
-      signal: abort.signal,
-    })
-      .then(async (r) => {
-        if (r.ok && (await r.json()).hosted) {
-          studio.current?.stop();
-          setModal("realtime");
-        }
-      })
-      .catch(() => {});
-    return () => abort.abort();
-  }, []);
   useEffect(() => {
     if (!isExtension) return;
     chrome.storage.session
@@ -754,7 +738,7 @@ export default function App() {
                     setModal("realtime");
                   }}
                 >
-                  <Sparkles size={13} /> AI live try-on
+                  <Sparkles size={13} /> AI photo try-on
                 </button>
                 <button
                   className="icon-button"
@@ -1224,7 +1208,7 @@ export default function App() {
                       wardrobe: "Your personal wardrobe.",
                       measure: "Find your starting size.",
                       render: "A more realistic still image.",
-                      realtime: "Your live AI fitting room.",
+                      realtime: "Open-source AI photo try-on.",
                     }[modal]
                   }
                 </h2>
@@ -1241,7 +1225,7 @@ export default function App() {
               </button>
             </header>
             {modal === "realtime" && (
-              <RealtimeTryOn
+              <FashnTryOn
                 garment={garment}
                 garments={[...custom, ...catalogue]}
                 onChoose={choose}
