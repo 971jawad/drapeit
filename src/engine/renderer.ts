@@ -41,12 +41,51 @@ function triangle(
   ctx.drawImage(image, 0, 0);
   ctx.restore();
 }
-export function texture(image: HTMLImageElement, settings: FitSettings) {
+export function texture(image: HTMLImageElement, settings: FitSettings, photoCutout = false) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = Math.round((512 * image.height) / image.width);
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  // Real archival photographs often have solid white or grey studio backgrounds.
+  // Remove only contiguous light background pixels connected to the border.
+  // This is approximate and intentionally leaves complex photo backgrounds intact.
+  if (photoCutout) {
+    const w = canvas.width, h = canvas.height;
+    const pixels = ctx.getImageData(0, 0, w, h);
+    const data = pixels.data;
+    const visited = new Uint8Array(w * h), stack: number[] = [];
+    const corners = [0, w - 1, (h - 1) * w, h * w - 1];
+    const bright = (index: number) => {
+      const j = index * 4;
+      const hi = Math.max(data[j], data[j + 1], data[j + 2]);
+      const lo = Math.min(data[j], data[j + 1], data[j + 2]);
+      return lo >= 194 && hi - lo < 52;
+    };
+    for (let x = 0; x < w; x++) {
+      if (bright(x)) stack.push(x);
+      if (bright((h - 1) * w + x)) stack.push((h - 1) * w + x);
+    }
+    for (let y = 0; y < h; y++) {
+      if (bright(y * w)) stack.push(y * w);
+      if (bright(y * w + w - 1)) stack.push(y * w + w - 1);
+    }
+    // Avoid removing textured backgrounds that are not predominantly light.
+    if (corners.filter(bright).length >= 2) {
+      while (stack.length) {
+        const p = stack.pop()!;
+        if (visited[p] || !bright(p)) continue;
+        visited[p] = 1;
+        data[p * 4 + 3] = 0;
+        const x = p % w, y = (p / w) | 0;
+        if (x > 0) stack.push(p - 1);
+        if (x + 1 < w) stack.push(p + 1);
+        if (y > 0) stack.push(p - w);
+        if (y + 1 < h) stack.push(p + w);
+      }
+      ctx.putImageData(pixels, 0, 0);
+    }
+  }
   if (settings.color) {
     ctx.globalCompositeOperation = "source-atop";
     ctx.globalAlpha = 0.56;
@@ -185,4 +224,56 @@ export function renderGarment(
     }
     ctx.restore();
   }
+}
+
+
+/** Simple landmark-anchored image overlay for small accessories. This is a
+ * visual approximation; MediaPipe Pose does not locate nostrils or fabric folds. */
+export function renderAccessory(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLCanvasElement,
+  pose: Point[],
+  settings: FitSettings,
+  slot: "scarf" | "mask" | "wrist" | "wrist-right" | "neck" | "nose",
+  w: number,
+  h: number,
+) {
+  const p = pose;
+  const mid = (a: number, b: number) => ({
+    x: (p[a].x + p[b].x) / 2,
+    y: (p[a].y + p[b].y) / 2,
+  });
+  const shoulder = distance(p[11], p[12]);
+  const face = distance(p[7], p[8]);
+  const torso = distance(mid(11, 12), mid(23, 24));
+  const sizeScale = settings.width / 100;
+  let center: {x:number;y:number}, displayWidth: number, displayHeight: number;
+  if (slot === "wrist" || slot === "wrist-right") {
+    const index = slot === "wrist-right" ? 16 : 15;
+    if ((p[index].visibility ?? 0) < 0.4) return;
+    center = {x:p[index].x, y:p[index].y};
+    displayWidth = shoulder * 0.27 * sizeScale;
+    displayHeight = displayWidth;
+  } else if (slot === "mask") {
+    center = mid(7, 8);
+    center.y += face * 0.15;
+    displayWidth = Math.max(face, shoulder * 0.24) * 1.1 * sizeScale;
+    displayHeight = displayWidth * 0.62;
+  } else if (slot === "nose") {
+    center = {x:p[0].x + shoulder * 0.07, y:p[0].y + shoulder * 0.075};
+    displayWidth = shoulder * 0.14 * sizeScale;
+    displayHeight = displayWidth;
+  } else {
+    center = mid(11, 12);
+    center.y += torso * (slot === "neck" ? 0.05 : 0.16);
+    displayWidth = shoulder * (slot === "neck" ? 0.58 : 1.05) * sizeScale;
+    displayHeight = displayWidth * (slot === "neck" ? 0.60 : 1.05);
+  }
+  if (!Number.isFinite(center.x) || !Number.isFinite(center.y)) return;
+  ctx.save();
+  ctx.globalAlpha = settings.opacity / 100;
+  ctx.drawImage(image, (center.x - displayWidth / 2) * w,
+    (center.y - displayHeight / 2 + settings.offset / 100 * torso) * h,
+    displayWidth * w, displayHeight * h);
+  ctx.restore();
 }

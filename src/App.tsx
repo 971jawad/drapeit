@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   ArrowLeftRight,
@@ -88,6 +88,9 @@ function download(src: string, name: string) {
 export default function App() {
   const [garment, setGarment] = useState<Garment>(catalogue[0]),
     [custom, setCustom] = useState<Garment[]>([]),
+    [outfit, setOutfit] = useState<Garment[]>([catalogue[0]]),
+    [layerColors, setLayerColors] = useState<Record<string, string>>({}),
+    [audience, setAudience] = useState("Everyone"),
     [settings, setSettings] = useState<FitSettings>(defaultSettings),
     [tracking, setTracking] = useState<TrackingState>({
       status: "idle",
@@ -147,12 +150,33 @@ export default function App() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(""), 7000);
   };
-  const update = <K extends keyof FitSettings>(key: K, value: FitSettings[K]) =>
+  const update = <K extends keyof FitSettings>(key: K, value: FitSettings[K]) => {
     setSettings((s) => ({ ...s, [key]: value }));
+    if (key === "color" && typeof value === "string")
+      setLayerColors((colors) => ({ ...colors, [garment.id]: value }));
+  };
   const choose = (g: Garment) => {
     setGarment(g);
-    setSettings((s) => ({ ...s, color: "", pattern: "original" }));
+    setOutfit((previous) => {
+      const slot = g.slot || g.category;
+      // Dresses replace tops and bottoms; changing a slot keeps unrelated layers.
+      const next = previous.filter((p) => {
+        const pslot = p.slot || p.category;
+        if (slot === "dress") return !["dress", "top", "bottom"].includes(pslot);
+        if (["top", "bottom"].includes(slot) && pslot === "dress") return false;
+        return pslot !== slot;
+      });
+      return [...next, g];
+    });
+    setSettings((s) => ({ ...s, color: layerColors[g.id] || "", pattern: "original" }));
     setMobilePanel(null);
+  };
+  const removePiece = (id: string) => {
+    setOutfit((pieces) => pieces.filter((p) => p.id !== id));
+  };
+  const clearOutfit = () => {
+    setOutfit([]);
+    notify("Outfit layers cleared.");
   };
   useEffect(
     () => () => {
@@ -423,13 +447,19 @@ export default function App() {
       setRenderBusy(false);
     }
   }
-  const filtered = [...custom, ...catalogue].filter(
-    (g) =>
+  const filtered = [...custom, ...catalogue].filter((g) => {
+    const slot = g.slot || g.category;
+    const categoryMatch =
       category === "All" ||
-      (category === "Tops" && g.category === "top") ||
-      (category === "Dresses" && g.category === "dress") ||
-      (category === "Bottoms" && g.category === "bottom"),
-  );
+      (category === "Tops" && slot === "top") ||
+      (category === "Bottoms" && slot === "bottom") ||
+      (category === "Dresses" && slot === "dress") ||
+      (category === "Outerwear" && slot === "outer") ||
+      (category === "Accessories" && ["scarf", "mask", "wrist", "wrist-right", "neck", "nose"].includes(slot));
+    return categoryMatch &&
+      (audience === "Everyone" || !g.audience || g.audience === "Unisex" || g.audience === audience);
+  });
+  const studioLayers = useMemo(() => outfit.map((g) => ({ garment: g, color: layerColors[g.id] || "" })), [outfit, layerColors]);
   const fit = recommendedSize(chest, chart, ease);
   return (
     <>
@@ -542,7 +572,7 @@ export default function App() {
             {tab === "collection" && (
               <>
                 <div className="category-filter">
-                  {["All", "Tops", "Dresses", "Bottoms"].map((c) => (
+                  {["All", "Tops", "Dresses", "Bottoms", "Outerwear", "Accessories"].map((c) => (
                     <button
                       key={c}
                       className={category === c ? "active" : ""}
@@ -552,8 +582,16 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                <div className="audience-filter" role="group" aria-label="Collection audience">
+                  {["Everyone", "Men", "Women"].map((value) => (
+                    <button key={value} type="button" className={audience === value ? "active" : ""}
+                      aria-pressed={audience === value} onClick={() => setAudience(value)}>
+                      {value}
+                    </button>
+                  ))}
+                </div>
                 <div className="collection-label">
-                  <span>THE EVERYDAY EDIT</span>
+                  <span>BUILD YOUR LOOK</span>
                   <span>{filtered.length} pieces</span>
                 </div>
                 <div className="garment-grid">
@@ -575,8 +613,8 @@ export default function App() {
                                 : "#eeebe4",
                         }}
                       >
-                        <img src={g.image} alt={g.name} />
-                        {garment.id === g.id && (
+                        <img src={g.image} alt={g.name} loading="lazy" referrerPolicy="no-referrer" />
+                        {outfit.some((piece) => piece.id === g.id) && (
                           <span className="garment-check">
                             <Check size={12} />
                           </span>
@@ -587,6 +625,9 @@ export default function App() {
                       </div>
                       <strong>{g.name}</strong>
                       <span>{g.subtitle}</span>
+                      <span className="garment-card-source">
+                        {outfit.some((piece) => piece.id === g.id) ? "✓ Wearing · tap to edit" : "+ Add to outfit"}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -602,6 +643,31 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                <div className="outfit-builder">
+                  <div className="outfit-heading">
+                    <strong>Current outfit ({outfit.length})</strong>
+                    <button type="button" onClick={clearOutfit}>Clear all</button>
+                  </div>
+                  {outfit.length === 0 ? (
+                    <p>Choose items above to build a look.</p>
+                  ) : (
+                    <div className="outfit-pieces">
+                      {outfit.map((piece) => (
+                        <div className="outfit-piece" key={piece.id}>
+                          <button type="button" onClick={() => { setGarment(piece); setSettings((s) => ({ ...s, color: layerColors[piece.id] || "" })); }}
+                            aria-label={"Edit " + piece.name}>
+                            <img src={piece.image} alt="" loading="lazy" />
+                            <span>{piece.name}</span>
+                          </button>
+                          <button type="button" onClick={() => removePiece(piece.id)}
+                            aria-label={"Remove " + piece.name}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p>Mix tops, bottoms, coats, masks, watches, scarves and jewellery.
+                    Each item can have its own colour.</p>
+                </div>
                 <button
                   className="add-own"
                   onClick={() => garmentFile.current?.click()}
@@ -785,6 +851,7 @@ export default function App() {
               <Studio
                 ref={studio}
                 garment={garment}
+                layers={studioLayers}
                 settings={settings}
                 compare={compare}
                 onTracking={setTracking}
@@ -838,7 +905,7 @@ export default function App() {
                   style={{ background: settings.color || garment.color }}
                 />
                 <div>
-                  <strong>{garment.name}</strong>
+                  <strong>{outfit.length > 1 ? `${outfit.length} outfit pieces` : garment.name}</strong>
                   <span>
                     Size {settings.size} <i>·</i> {source || "Camera ready"}
                   </span>
@@ -940,6 +1007,19 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              <label className="custom-garment-color">
+                Custom colour for {garment.name}
+                <input type="color" value={settings.color || garment.color}
+                  onChange={(event) => update("color", event.target.value)} />
+              </label>
+              {garment.source && (
+                <p className="control-note">
+                  <a href={garment.source} target="_blank" rel="noreferrer">
+                    View original garment photo and credits
+                  </a>
+                </p>
+              )}
+              <span className="control-note">Colour tint and positioning are approximations.</span>
             </section>
             <section className="control-section">
               <h3>Texture & pattern</h3>
