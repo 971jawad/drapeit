@@ -16,6 +16,12 @@ export interface Garment {
   color: string;
   imported?: boolean;
   source?: string;
+  /** Optional layering slot; imported garments default to their category. */
+  slot?: "top" | "bottom" | "dress" | "outer" | "scarf" | "mask" | "wrist" | "neck" | "nose";
+  audience?: "Men" | "Women" | "Unisex";
+  license?: string;
+  /** Commons photographs may have visible backgrounds; remove light backgrounds heuristically. */
+  photoCutout?: boolean;
 }
 export interface FitSettings {
   size: Size;
