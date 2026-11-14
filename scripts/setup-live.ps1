@@ -2,7 +2,7 @@
 # Provider credentials are prompted privately and stored as Cloudflare secrets.
 $ErrorActionPreference = 'Stop'
 function Invoke-DrapeItCli {
-    param([string]$Program, [string[]]$Arguments, [string]$InputText)
+    param([string]$Program, [string[]]$Arguments, [string]$InputText, [switch]$Quiet)
     $previous = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
@@ -15,7 +15,7 @@ function Invoke-DrapeItCli {
                     $line = $line.Replace([string]$property.Value, '[redacted]')
                 }
             }
-            Write-Host $line
+            if (!$Quiet) { Write-Host $line }
             $lines.Add($line)
         }
         if ($InputText) { $InputText | & $Program @Arguments 2>&1 | ForEach-Object $showLine }
@@ -24,6 +24,24 @@ function Invoke-DrapeItCli {
         if ($exitCode -ne 0) { throw 'A setup command failed. Review the command output above and retry.' }
         return ($lines -join "`n")
     } finally { $ErrorActionPreference = $previous }
+}
+function Connect-DrapeItCloudflare {
+    param([string]$Npx)
+    Write-Host 'Checking your existing Cloudflare login...'
+    try {
+        $null = Invoke-DrapeItCli -Program $Npx -Arguments @('--yes','wrangler@4.158.0','whoami','--json') -Quiet
+        Write-Host 'Reusing your existing Cloudflare login.'
+        return
+    } catch {
+        # whoami --json exits nonzero when authentication is unavailable.
+    }
+    Write-Host 'First sign in or finish creating your account at https://dash.cloudflare.com.'
+    Write-Host 'There is no timer yet. Leave this terminal open while you sign in.'
+    try { Start-Process 'https://dash.cloudflare.com/login' }
+    catch { Write-Host 'Open https://dash.cloudflare.com/login in your browser manually.' }
+    $null = Read-Host 'When the Cloudflare dashboard is open, press Enter here'
+    Write-Host 'Now approve the fresh device code in the browser. This does not use a localhost callback.'
+    $null = Invoke-DrapeItCli -Program $Npx -Arguments @('--yes','wrangler@4.158.0','login','--device')
 }
 function Start-DrapeItSetup {
     $providerSecret = $null
@@ -57,8 +75,7 @@ function Start-DrapeItSetup {
             Invoke-WebRequest -UseBasicParsing -Uri ('https://raw.githubusercontent.com/971jawad/drapeit/main/server/' + $name) -OutFile (Join-Path $serviceDir $name)
         }
         Set-Location $serviceDir
-        Write-Host 'Authorize Cloudflare in the browser. Create a Cloudflare account if you do not have one.'
-        $null = Invoke-DrapeItCli -Program $npx -Arguments @('--yes','wrangler@4.158.0','login')
+        Connect-DrapeItCloudflare -Npx $npx
         $deployed = Invoke-DrapeItCli -Program $npx -Arguments @('--yes','wrangler@4.158.0','deploy','--config','hosted.wrangler.jsonc')
         $liveUrl = [regex]::Match($deployed, 'https://[a-zA-Z0-9.-]+\.workers\.dev').Value
         if (!$liveUrl) { throw 'The deployment did not return a workers.dev URL. Check the Cloudflare deployment output.' }

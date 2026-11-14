@@ -13,7 +13,7 @@ powershell -NoProfile -Command "& ([scriptblock]::Create((Invoke-WebRequest -Use
 The [reviewable helper](../scripts/setup-live.ps1):
 
 1. Installs Node.js LTS with winget if needed and uses a pinned official Wrangler CLI.
-2. Opens Cloudflare authorization in your browser. Sign in or create a Cloudflare account, then allow deployment to your account. If Cloudflare asks you to choose an account or workers.dev subdomain, complete that step.
+2. Reuses an existing valid Cloudflare login. Otherwise it opens the Cloudflare dashboard and waits for you to finish signing in or creating an account before starting a timed device-code approval. Press Enter in the terminal when your dashboard is ready, then approve the fresh code. This avoids the localhost callback that can time out. If Cloudflare asks you to choose an account or workers.dev subdomain, complete that step.
 3. Deploys `drapeit-live` as a persistent Cloudflare Worker.
 4. Prompts privately for your Decart key and stores it as the `DECART_API_KEY` Worker secret. The key never goes into GitHub or the browser application.
 5. Creates a separate service access code, stores it as `ACCESS_TOKEN`, and keeps a Windows DPAPI-protected copy under your local user profile.
