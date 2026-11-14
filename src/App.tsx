@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   ArrowLeftRight,
@@ -459,6 +459,7 @@ export default function App() {
     return categoryMatch &&
       (audience === "Everyone" || !g.audience || g.audience === "Unisex" || g.audience === audience);
   });
+  const studioLayers = useMemo(() => outfit.map((g) => ({ garment: g, color: layerColors[g.id] || "" })), [outfit, layerColors]);
   const fit = recommendedSize(chest, chart, ease);
   return (
     <>
@@ -612,7 +613,7 @@ export default function App() {
                                 : "#eeebe4",
                         }}
                       >
-                        <img src={g.image} alt={g.name} />
+                        <img src={g.image} alt={g.name} loading="lazy" referrerPolicy="no-referrer" />
                         {outfit.some((piece) => piece.id === g.id) && (
                           <span className="garment-check">
                             <Check size={12} />
@@ -653,7 +654,7 @@ export default function App() {
                     <div className="outfit-pieces">
                       {outfit.map((piece) => (
                         <div className="outfit-piece" key={piece.id}>
-                          <button type="button" onClick={() => setGarment(piece)}
+                          <button type="button" onClick={() => { setGarment(piece); setSettings((s) => ({ ...s, color: layerColors[piece.id] || "" })); }}
                             aria-label={"Edit " + piece.name}>
                             <img src={piece.image} alt="" loading="lazy" />
                             <span>{piece.name}</span>
@@ -850,7 +851,7 @@ export default function App() {
               <Studio
                 ref={studio}
                 garment={garment}
-                layers={outfit.map((g) => ({ garment: g, color: layerColors[g.id] || "" }))}
+                layers={studioLayers}
                 settings={settings}
                 compare={compare}
                 onTracking={setTracking}
