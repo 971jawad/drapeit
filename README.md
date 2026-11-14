@@ -1,3 +1,21 @@
+# DrapeIt2 — Open-source FASHN try-on edition
+
+This is an experimental edition of DrapeIt using **FASHN VTON v1.5** for
+photorealistic **still-image** clothing replacement, rather than the original
+Decart realtime streaming provider.
+
+- The live on-device 2D camera mirror remains available.
+- AI photo generation requires a **separate self-hosted GPU service**, following
+  [FASHN deployment instructions](server/fashn/README.md).
+- Vercel's free static/serverless hosting does **not** provide the GPU needed
+  for model inference. Open weights avoid Decart API fees, not GPU costs.
+- The old paid Decart API endpoints are removed from this edition's Vercel
+  deployment; do not add the original DECART_API_KEY to this project.
+- The original README below documents the prior DrapeIt system, and may
+  reference obsolete Decart and Cloudflare deployment routes.
+
+---
+
 # DrapeIt
 
 A browser-based virtual fitting studio inspired by Jawad Ahmed Khan's DrapeIt proposal and three supplied try-on reference videos.
