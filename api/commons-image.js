@@ -11,6 +11,7 @@ const files = new Set([
   "Shalwar_kameez.jpg",
   "Trousers_MET_CI38.23.34_F.jpg",
   "Trousers_MET_CI40.173.9_B.jpg",
+  "Jeans_MET_1978.175.1_F.jpg",
   "Trousers_MET_CI38.23.23a_F.jpg",
   "Skirt_MET_CI58.67.8_B.jpg",
   "Skirt_MET_20.81.4.jpg",
