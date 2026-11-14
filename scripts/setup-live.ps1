@@ -21,7 +21,12 @@ function Invoke-DrapeItCli {
         if ($InputText) { $InputText | & $Program @Arguments 2>&1 | ForEach-Object $showLine }
         else { & $Program @Arguments 2>&1 | ForEach-Object $showLine }
         $exitCode = $LASTEXITCODE
-        if ($exitCode -ne 0) { throw 'A setup command failed. Review the command output above and retry.' }
+        if ($exitCode -ne 0) {
+            $failure = [InvalidOperationException]::new('A setup command failed. Review the command output above and retry.')
+            # Keep only the already-redacted output for targeted recovery.
+            $failure.Data['DrapeItOutput'] = $lines -join "`n"
+            throw $failure
+        }
         return ($lines -join "`n")
     } finally { $ErrorActionPreference = $previous }
 }
@@ -42,6 +47,25 @@ function Connect-DrapeItCloudflare {
     $null = Read-Host 'When the Cloudflare dashboard is open, press Enter here'
     Write-Host 'Now approve the fresh device code in the browser. This does not use a localhost callback.'
     $null = Invoke-DrapeItCli -Program $Npx -Arguments @('--yes','wrangler@4.158.0','login','--device')
+}
+function Publish-DrapeItService {
+    param([string]$Npx)
+    $deployArguments = @('--yes','wrangler@4.158.0','deploy','--config','hosted.wrangler.jsonc')
+    try {
+        return (Invoke-DrapeItCli -Program $Npx -Arguments $deployArguments)
+    } catch {
+        $output = [string]$_.Exception.Data['DrapeItOutput']
+        $onboarding = [regex]::Match($output, 'https://dash\.cloudflare\.com/[a-fA-F0-9]{32}/workers/onboarding').Value
+        if (($output -notmatch 'register a workers\.dev subdomain') -or !$onboarding) { throw }
+        Write-Host ''
+        Write-Host 'Cloudflare needs a workers.dev subdomain for this account. This is a one-time registration.'
+        Write-Host 'Choose an available name, for example nitesun-drapeit, and finish registration in the browser.'
+        Write-Host ('Registration page: ' + $onboarding)
+        try { Start-Process $onboarding }
+        catch { Write-Host 'Open the registration page above manually.' }
+        $null = Read-Host 'After Cloudflare confirms registration, press Enter here to resume deployment'
+        return (Invoke-DrapeItCli -Program $Npx -Arguments $deployArguments)
+    }
 }
 function Start-DrapeItSetup {
     $providerSecret = $null
@@ -76,7 +100,7 @@ function Start-DrapeItSetup {
         }
         Set-Location $serviceDir
         Connect-DrapeItCloudflare -Npx $npx
-        $deployed = Invoke-DrapeItCli -Program $npx -Arguments @('--yes','wrangler@4.158.0','deploy','--config','hosted.wrangler.jsonc')
+        $deployed = Publish-DrapeItService -Npx $npx
         $liveUrl = [regex]::Match($deployed, 'https://[a-zA-Z0-9.-]+\.workers\.dev').Value
         if (!$liveUrl) { throw 'The deployment did not return a workers.dev URL. Check the Cloudflare deployment output.' }
         $codeFile = Join-Path $serviceDir 'access-code.dpapi'
