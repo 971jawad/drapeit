@@ -54,9 +54,17 @@ export const catalogue: Garment[] = [
  * Most Met Museum works below are CC0; check credits and license per item.
  * The original five high-quality local cutouts remain the first entries.
  */
-const commons = (file: string) =>
-  "https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/" +
-  encodeURIComponent(file) + "&width=480";
+const commons = (file: string) => {
+  const isHosted = typeof location !== "undefined" &&
+    location.protocol.startsWith("http") &&
+    location.hostname !== "localhost" &&
+    location.hostname !== "127.0.0.1" &&
+    !location.hostname.endsWith("github.io");
+  return isHosted
+    ? "/api/commons-image?file=" + encodeURIComponent(file)
+    : "https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/" +
+      encodeURIComponent(file) + "&width=480";
+};
 
 const source = (file: string) =>
   "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(file);
