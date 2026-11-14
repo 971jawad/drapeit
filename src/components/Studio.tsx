@@ -18,7 +18,7 @@ import type { FitSettings, Garment, Point, TrackingState } from "../types";
 import { getTracker } from "../engine/tracker";
 import { loadImage } from "../engine/images";
 import { poseConfidence, smoothPose } from "../engine/geometry";
-import { renderGarment, texture } from "../engine/renderer";
+import { renderAccessory, renderGarment, texture } from "../engine/renderer";
 export interface StudioHandle {
   startCamera: () => Promise<void>;
   stop: () => void;
@@ -28,6 +28,7 @@ export interface StudioHandle {
 }
 interface Props {
   garment: Garment;
+  layers?: { garment: Garment; color: string }[];
   settings: FitSettings;
   compare: boolean;
   onTracking: (s: TrackingState) => void;
@@ -36,7 +37,7 @@ interface Props {
   onSource: (s: string) => void;
 }
 export const Studio = forwardRef<StudioHandle, Props>(function Studio(
-  { garment, settings, compare, onTracking, onError, onUpload, onSource },
+  { garment, layers, settings, compare, onTracking, onError, onUpload, onSource },
   ref,
 ) {
   const canvas = useRef<HTMLCanvasElement>(null),
@@ -48,22 +49,28 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
     videoUrl = useRef(""),
     pose = useRef<Point[] | null>(null),
     lastSeen = useRef(0),
-    tex = useRef<HTMLCanvasElement | null>(null),
-    latest = useRef({ settings, garment, compare, onTracking, onError }),
+    textures = useRef<Map<string, HTMLCanvasElement>>(new Map()),
+    latest = useRef({ settings, garment, layers, compare, onTracking, onError }),
     [source, setSource] = useState(""),
     [loading, setLoading] = useState(false);
-  latest.current = { settings, garment, compare, onTracking, onError };
+  latest.current = { settings, garment, layers, compare, onTracking, onError };
   useEffect(() => {
     let alive = true;
-    loadImage(garment.image)
-      .then((i) => {
-        if (alive) tex.current = texture(i, settings);
-      })
-      .catch((e) => onError(e.message));
-    return () => {
-      alive = false;
-    };
-  }, [garment.image, settings.color, settings.pattern]);
+    const pieces = layers?.length ? layers : [{ garment, color: settings.color }];
+    const cache = new Map<string, HTMLCanvasElement>();
+    Promise.all(pieces.map(async (piece) => {
+      try {
+        const img = await loadImage(piece.garment.image);
+        const tinted = texture(img, { ...settings, color: piece.color }, piece.garment.photoCutout);
+        if (alive) cache.set(piece.garment.id, tinted);
+      } catch (e) {
+        if (alive) onError("Could not load " + piece.garment.name + ": " + (e as Error).message);
+      }
+    })).then(() => {
+      if (alive) textures.current = cache;
+    });
+    return () => { alive = false; };
+  }, [garment, layers, settings.color, settings.pattern]);
   const stop = () => {
     generation.current++;
     cancelAnimationFrame(frame.current);
@@ -221,18 +228,34 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
       }
       if (captured.width && captured.height)
         ctx.drawImage(captured, 0, 0, out.width, out.height);
-      if (pose.current && tex.current && !latest.current.compare)
-        renderGarment(
-          ctx,
-          tex.current,
-          pose.current,
-          latest.current.settings,
-          latest.current.garment.category,
-          captured,
-          out.width,
-          out.height,
-          latest.current.garment.sleeves,
-        );
+      if (pose.current && !latest.current.compare) {
+        const chosen = latest.current.layers?.length
+          ? latest.current.layers
+          : [{ garment: latest.current.garment, color: latest.current.settings.color }];
+        // Bottoms -> main layers -> outer layers -> accessories.
+        const priority: Record<string, number> = {
+          bottom: 0, dress: 1, top: 2, outer: 3,
+          scarf: 4, neck: 5, wrist: 6, mask: 7, nose: 8,
+        };
+        const sorted = [...chosen].sort((a, b) =>
+          (priority[a.garment.slot || a.garment.category] ?? 2) -
+          (priority[b.garment.slot || b.garment.category] ?? 2));
+        for (const piece of sorted) {
+          const img = textures.current.get(piece.garment.id);
+          if (!img) continue;
+          const slot = piece.garment.slot || piece.garment.category;
+          if (slot === "scarf" || slot === "mask" || slot === "wrist" ||
+              slot === "neck" || slot === "nose") {
+            renderAccessory(ctx, img, pose.current, latest.current.settings,
+              slot, out.width, out.height);
+          } else {
+            renderGarment(ctx, img, pose.current,
+              { ...latest.current.settings, color: piece.color },
+              slot === "outer" ? "top" : piece.garment.category,
+              captured, out.width, out.height, piece.garment.sleeves);
+          }
+        }
+      }
       ctx.restore();
       const status = pose.current ? "tracking" : "searching";
       if (status !== reportedStatus || now - lastReport > 500) {
