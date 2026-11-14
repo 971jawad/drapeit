@@ -2423,3 +2423,45 @@ h1 em {
     display: none;
   }
 }
+
+
+/* Expanded wardrobe: responsive category/audience filters and layered outfit list. */
+.category-filter { flex-wrap: wrap; justify-content: flex-start; gap: 5px; }
+.category-filter button { white-space: nowrap; }
+.audience-filter { display: flex; gap: 5px; margin-top: 10px; }
+.audience-filter button {
+  flex: 1; padding: 7px 6px; border: 1px solid var(--line);
+  border-radius: 5px; font-size: 10px; color: #73806d;
+}
+.audience-filter button.active { background: var(--green); color: white; border-color: var(--green); }
+.garment-card-source { color: #657b55 !important; font-size: 9px !important; }
+.outfit-builder {
+  margin-top: 18px; border: 1px solid var(--line);
+  border-radius: 9px; padding: 12px; background: #f7f8f3;
+}
+.outfit-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.outfit-heading strong { font-size: 11px; font-weight: 600; }
+.outfit-heading > button { font-size: 9px; text-decoration: underline; color: #7c8b72; }
+.outfit-pieces { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.outfit-piece {
+  display: flex; align-items: center; gap: 7px; border: 1px solid var(--line);
+  background: #fff; border-radius: 6px; padding: 4px 6px;
+}
+.outfit-piece > button:first-child {
+  display: flex; align-items: center; flex: 1; text-align: left; gap: 8px;
+  font-size: 10px; min-width: 0;
+}
+.outfit-piece img { width: 30px; height: 35px; object-fit: contain; border-radius: 3px; }
+.outfit-piece span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.outfit-piece > button:last-child { color: #a15e56; font-size: 20px; width: 25px; }
+.outfit-builder p { margin-top: 10px; font-size: 9px; color: #778874; line-height: 1.6; }
+.custom-garment-color {
+  display: flex; flex-direction: column; gap: 7px; margin-top: 12px;
+  font-size: 10px; color: #687862;
+}
+.custom-garment-color input[type="color"] { height: 32px; width: 100%; cursor: pointer; }
+.control-note a { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 700px) {
+  .category-filter { flex-wrap: wrap; }
+  .category-filter button { font-size: 10px; padding: 7px; }
+}
