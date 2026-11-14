@@ -86,7 +86,7 @@ const onlinePhotos: Addition[] = [
   { id:"men-kurta",name:"Historic woven tunic",subtitle:"Historic clothing photo · Met Museum",category:"top",sleeves:"long",slot:"top",audience:"Men",color:"#c4ae8c",file:"Shirt_MET_DT5094.jpg",license:"CC0 1.0" },
   { id:"shalwar-kameez",name:"Shalwar kameez set",subtitle:"Traditional outfit photo · Commons",category:"dress",sleeves:"long",slot:"dress",audience:"Unisex",color:"#dbaa86",file:"Shalwar_kameez.jpg",license:"See source" },
   { id:"met-trousers",name:"Tailored trousers",subtitle:"Real garment · Met Museum",category:"bottom",slot:"bottom",audience:"Men",color:"#a29e95",file:"Trousers_MET_CI38.23.34_F.jpg" },
-  { id:"jeans-blue",name:"Historic trousers",subtitle:"Historic clothing photo · Met Museum",category:"bottom",slot:"bottom",audience:"Unisex",color:"#3a5879",file:"Trousers_MET_CI40.173.9_B.jpg",license:"CC0 1.0" },
+  { id:"jeans-blue",name:"Blue denim jeans",subtitle:"Real Levi Strauss jeans · Met Museum",category:"bottom",slot:"bottom",audience:"Unisex",color:"#3a5879",file:"Jeans_MET_1978.175.1_F.jpg",license:"CC0 1.0" },
   { id:"linen-trousers",name:"Historic linen trousers",subtitle:"Historic clothing photo · Met Museum",category:"bottom",slot:"bottom",audience:"Unisex",color:"#8a8776",file:"Trousers_MET_CI38.23.23a_F.jpg" },
   { id:"met-skirt",name:"Traditional flared skirt",subtitle:"Real garment · Met Museum",category:"bottom",slot:"bottom",audience:"Women",color:"#ad8e62",file:"Skirt_MET_CI58.67.8_B.jpg" },
   { id:"met-skirt-2",name:"Historical skirt",subtitle:"Real garment · Met Museum",category:"bottom",slot:"bottom",audience:"Women",color:"#97596a",file:"Skirt_MET_20.81.4.jpg" },
@@ -106,7 +106,7 @@ const onlinePhotos: Addition[] = [
   { id:"met-necklace",name:"Victorian necklace",subtitle:"Real jewellery · Met Museum",category:"top",sleeves:"none",slot:"neck",audience:"Women",color:"#bc8b46",file:"Necklace_MET_DP110369.jpg" },
   { id:"met-necklace-2",name:"Heritage pendant necklace",subtitle:"Real jewellery · Met Museum",category:"top",sleeves:"none",slot:"neck",audience:"Unisex",color:"#cca15e",file:"Necklace_MET_1972.188.5.jpg" },
   { id:"modern-watch",name:"Everyday wristwatch",subtitle:"Real watch photograph · CC BY-SA",category:"top",sleeves:"none",slot:"wrist",audience:"Unisex",color:"#425261",file:"Wrist_Watch.jpg",license:"CC BY-SA 4.0" },
-  { id:"met-bracelet",name:"Gold-tone wrist bracelet",subtitle:"Real jewellery · Met Museum",category:"top",sleeves:"none",slot:"wrist",audience:"Women",color:"#c9a862",file:"Bracelet_MET_DP20024.jpg" },
+  { id:"met-bracelet",name:"Gold-tone wrist bracelet",subtitle:"Real jewellery · Met Museum",category:"top",sleeves:"none",slot:"wrist-right",audience:"Women",color:"#c9a862",file:"Bracelet_MET_DP20024.jpg" },
   { id:"nose-ring",name:"Traditional nose ring",subtitle:"Real nose jewellery · CC0",category:"top",sleeves:"none",slot:"nose",audience:"Women",color:"#e6b960",file:"Nose_Ring,_One_of_a_Pair_MET_LC-15_95_129.jpg" },
 ];
 
