@@ -455,7 +455,7 @@ export default function App() {
       (category === "Bottoms" && slot === "bottom") ||
       (category === "Dresses" && slot === "dress") ||
       (category === "Outerwear" && slot === "outer") ||
-      (category === "Accessories" && ["scarf", "mask", "wrist", "neck", "nose"].includes(slot));
+      (category === "Accessories" && ["scarf", "mask", "wrist", "wrist-right", "neck", "nose"].includes(slot));
     return categoryMatch &&
       (audience === "Everyone" || !g.audience || g.audience === "Unisex" || g.audience === audience);
   });
