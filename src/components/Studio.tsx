@@ -233,7 +233,7 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
         // Bottoms -> main layers -> outer layers -> accessories.
         const priority: Record<string, number> = {
           bottom: 0, dress: 1, top: 2, outer: 3,
-          scarf: 4, neck: 5, wrist: 6, mask: 7, nose: 8,
+          scarf: 4, neck: 5, wrist: 6, "wrist-right": 6, mask: 7, nose: 8,
         };
         const sorted = [...chosen].sort((a, b) =>
           (priority[a.garment.slot || a.garment.category] ?? 2) -
@@ -242,7 +242,7 @@ export const Studio = forwardRef<StudioHandle, Props>(function Studio(
           const img = textures.current.get(piece.garment.id);
           if (!img) continue;
           const slot = piece.garment.slot || piece.garment.category;
-          if (slot === "scarf" || slot === "mask" || slot === "wrist" ||
+          if (slot === "scarf" || slot === "mask" || slot === "wrist" || slot === "wrist-right" ||
               slot === "neck" || slot === "nose") {
             renderAccessory(ctx, img, pose.current, latest.current.settings,
               slot, out.width, out.height);
