@@ -55,8 +55,8 @@ export const catalogue: Garment[] = [
  * The original five high-quality local cutouts remain the first entries.
  */
 const commons = (file: string) =>
-  "https://commons.wikimedia.org/wiki/Special:Redirect/file/" +
-  encodeURIComponent(file) + "?width=480";
+  "https://commons.wikimedia.org/w/index.php?title=Special:Redirect/file/" +
+  encodeURIComponent(file) + "&width=480";
 
 const source = (file: string) =>
   "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(file);
